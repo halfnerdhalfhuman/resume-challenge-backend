@@ -20,7 +20,14 @@ jobs:
   terraform:
     name: Terraform Operations
     runs-on: ubuntu-latest
-    environment: prod 
+    environment: prod
+    env:
+      TF_VAR_aws_region: ${{ vars.AWS_REGION }}
+      TF_VAR_prod_account: ${{ vars.PROD_ACCOUNT }}
+      TF_VAR_s3_bucket: ${{ vars.S3_BUCKET }}
+      TF_VAR_ddb_table: ${{ vars.DDB_TABLE }}
+      TF_VAR_lambda_function_name: ${{ vars.LAMBDA_FUNCTION_NAME }}
+      TF_VAR_custom_domain: ${{ vars.CUSTOM_DOMAIN }}
 
     defaults:
       run:
@@ -41,18 +48,6 @@ jobs:
           terraform_version: 1.10.5
           terraform_wrapper: false 
       
-      - name: Set Environment Variables
-        run: |
-          echo "Setting Terraform environment variables from GitHub"
-        env:
-          TF_VAR_aws_region: ${{ vars.AWS_REGION }}
-          TF_VAR_prod_account: ${{ vars.PROD_ACCOUNT }}
-          TF_VAR_s3_bucket: ${{ vars.S3_BUCKET }}
-          TF_VAR_ddb_table: ${{ vars.DDB_TABLE }}
-          TF_VAR_lambda_function_name: ${{ vars.LAMBDA_FUNCTION_NAME }}
-          TF_VAR_custom_domain: ${{ vars.CUSTOM_DOMAIN }}
-      
-
       
       - name: Terraform Init
         id: init
