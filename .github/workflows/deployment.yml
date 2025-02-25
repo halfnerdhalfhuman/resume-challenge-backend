@@ -22,12 +22,20 @@ jobs:
     runs-on: ubuntu-latest
     environment: prod
     env:
-      TF_VAR_aws_region: ${{ vars.AWS_REGION }}
-      TF_VAR_prod_account: ${{ vars.PROD_ACCOUNT }}
-      TF_VAR_s3_bucket: ${{ vars.S3_BUCKET }}
-      TF_VAR_ddb_table: ${{ vars.DDB_TABLE }}
-      TF_VAR_lambda_function_name: ${{ vars.LAMBDA_FUNCTION_NAME }}
-      TF_VAR_custom_domain: ${{ vars.CUSTOM_DOMAIN }}
+      TF_VAR_aws_region: ${{ secrets.AWS_REGION }}
+      TF_VAR_prod_account: ${{ secrets.PROD_ACCOUNT }}
+      TF_VAR_s3_bucket: ${{ secrets.S3_BUCKET }}
+      TF_VAR_ddb_table: ${{ secrets.DDB_TABLE }}
+      TF_VAR_lambda_function_name: ${{ secrets.LAMBDA_FUNCTION_NAME }}
+      TF_VAR_custom_domain: ${{ secrets.CUSTOM_DOMAIN }}
+
+    name: Configure AWS Credentials
+    uses: aws-actions/configure-aws-credentials@v4
+    with:
+      role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+      aws-region: ${{ secrets.AWS_REGION }}
+
+
 
     defaults:
       run:
