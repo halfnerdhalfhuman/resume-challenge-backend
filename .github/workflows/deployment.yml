@@ -21,6 +21,10 @@ jobs:
     name: Terraform Operations
     runs-on: ubuntu-latest
     environment: prod 
+
+  defaults:
+    run:
+      working-directory: ./terraform
     
     # to prevent concurrent runs
     concurrency:
@@ -48,14 +52,16 @@ jobs:
           TF_VAR_lambda_function_name: ${{ vars.LAMBDA_FUNCTION_NAME }}
           TF_VAR_custom_domain: ${{ vars.CUSTOM_DOMAIN }}
       
-      - name: Terraform Format Check
-        id: fmt
-        run: terraform fmt -check -recursive -diff
-        continue-on-error: true
+
       
       - name: Terraform Init
         id: init
         run: terraform init -input=false
+
+      - name: Terraform Format Check
+        id: fmt
+        run: terraform fmt -check -recursive -diff
+        continue-on-error: true
 
       - name: Terraform Validate
         id: validate
