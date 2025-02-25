@@ -2,6 +2,7 @@ import os
 from unittest import TestCase
 from boto3 import resource
 from moto import mock_aws
+import json
 
 from app import LambdaDynamoDBClass 
 from app import update_visitor_count
@@ -37,11 +38,11 @@ class TestUpdateVisitCount(TestCase):
     def test_update_visitor_count(self) -> None:
 
         test_initial_count = update_visitor_count(dynamo_db = self.mocked_dynamodb_class)
-        self.assertEqual(int(test_initial_count["body"]["visit_count"]), 1)
+        self.assertEqual(int(json.loads(test_initial_count["body"])["visit_count"]), 1)
         self.assertEqual(test_initial_count["statusCode"], 200)
 
         test_inc_count = update_visitor_count(dynamo_db = self.mocked_dynamodb_class)
-        self.assertEqual(int(test_inc_count["body"]["visit_count"]), 2)
+        self.assertEqual(int(json.loads(test_inc_count["body"])["visit_count"]), 2)
         self.assertEqual(test_inc_count["statusCode"], 200)
 
     def tearDown(self) -> None:

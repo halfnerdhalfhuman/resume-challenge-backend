@@ -402,3 +402,65 @@ resource "aws_iam_role_policy_attachment" "lambda_log_attach" {
   policy_arn = aws_iam_policy.lambda_logs.arn
   role       = aws_iam_role.lambda.name
 }
+
+
+# Github Actions Role / Policy
+
+resource "aws_iam_openid_connect_provider" "github_actions" {
+  client_id_list  = ["sts.amazonaws.com"]
+  thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1"]
+  url             = "https://token.actions.githubusercontent.com"
+}
+
+resource "aws_iam_role" "github_actions" {
+  name                 = "GitHubAction-AssumeRoleWithAction"
+  max_session_duration = 3600
+
+  assume_role_policy = jsonencode({
+    Statement = [{
+      Action = "sts:AssumeRoleWithWebIdentity"
+      Condition = {
+        StringEquals = {
+          "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+        }
+        StringLike = {
+          "token.actions.githubusercontent.com:sub" = "repo:tlew19/*"
+        }
+      }
+      Effect = "Allow"
+      Principal = {
+        Federated = "${aws_iam_openid_connect_provider.github_actions.arn}"
+      }
+    }]
+    Version = "2012-10-17"
+  })
+
+
+
+}
+
+resource "aws_iam_policy" "github_actions" {
+  name = "GitHubActionsPutS3"
+
+  policy = jsonencode({
+    Statement = [{
+      Action   = ["s3:PutObject"]
+      Effect   = "Allow"
+      Resource = ["arn:aws:s3:::${var.s3_bucket}", "arn:aws:s3:::${var.s3_bucket}/*"]
+      Sid      = "AllowS3Action"
+      }, {
+      Action   = ["sts:AssumeRole"]
+      Effect   = "Deny"
+      Resource = ["*"]
+      Sid      = "OidcPreventRoleChaining"
+    }]
+    Version = "2012-10-17"
+  })
+}
+
+
+resource "aws_iam_role_policy_attachment" "github_actions" {
+  policy_arn = aws_iam_policy.github_actions.arn
+  role       = aws_iam_role.github_actions.name
+}
+

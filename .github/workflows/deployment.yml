@@ -1,0 +1,140 @@
+name: Terraform CI/CD
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:  
+
+permissions:
+  contents: read
+  pull-requests: write  # Needed for commenting on PRs
+
+env:
+  TF_LOG: INFO
+
+jobs:
+  terraform:
+    name: Terraform Operations
+    runs-on: ubuntu-latest
+    environment: prod 
+    
+    # to prevent concurrent runs
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: false 
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.10.5
+          terraform_wrapper: false 
+      
+      - name: Set Environment Variables
+        run: |
+          echo "Setting Terraform environment variables from GitHub"
+        env:
+          TF_VAR_aws_region: ${{ vars.AWS_REGION }}
+          TF_VAR_prod_account: ${{ vars.PROD_ACCOUNT }}
+          TF_VAR_s3_bucket: ${{ vars.S3_BUCKET }}
+          TF_VAR_ddb_table: ${{ vars.DDB_TABLE }}
+          TF_VAR_lambda_function_name: ${{ vars.LAMBDA_FUNCTION_NAME }}
+          TF_VAR_custom_domain: ${{ vars.CUSTOM_DOMAIN }}
+      
+      - name: Terraform Format Check
+        id: fmt
+        run: terraform fmt -check -recursive -diff
+        continue-on-error: true
+      
+      - name: Terraform Init
+        id: init
+        run: terraform init -input=false
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        id: plan
+        run: |
+          terraform plan -input=false -no-color -out=tfplan
+          terraform show -no-color tfplan > tfplan.txt
+          echo "TERRAFORM_CHANGES=$(grep -c "Plan:" tfplan.txt | awk '{print $2}')" >> $GITHUB_ENV
+          cat tfplan.txt
+        continue-on-error: false
+      
+      - name: Add Plan to PR Comment
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const planOutput = fs.readFileSync('tfplan.txt', 'utf8');
+            const output = `#### Terraform Plan 📝
+            \`\`\`diff
+            ${planOutput}
+            \`\`\`
+            *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+      
+      - name: Check if Changes Exist
+        id: changes
+        run: |
+          CHANGES=$(grep -c "No changes." tfplan.txt || true)
+          if [ "$CHANGES" -gt 0 ]; then
+            echo "No changes detected in Terraform plan"
+            echo "HAS_CHANGES=false" >> $GITHUB_ENV
+          else
+            echo "Changes detected in Terraform plan"
+            echo "HAS_CHANGES=true" >> $GITHUB_ENV
+          fi
+      
+      - name: Check Changes and Proceed
+        id: check_changes
+        run: |
+          if [ "${{ env.HAS_CHANGES }}" == "true" ]; then
+            echo "Changes detected, manual approval needed"
+          else
+            echo "No changes detected, skipping approval"
+          fi
+      
+      - name: Manual Approval
+        uses: trstringer/manual-approval@v1
+        if: env.HAS_CHANGES == 'true'
+        with:
+          secret: ${{ secrets.GITHUB_TOKEN }}
+          approvers: ${{ github.actor }}
+          minimum-approvals: 1
+          issue-title: "Approval Required: Terraform Apply for ${{ github.ref_name }}"
+          issue-body: "Please review the Terraform plan and approve or deny the apply operation."
+          exclude-workflow-initiator-as-approver: false
+          timeout-minutes: 60
+      
+      - name: Terraform Apply
+        if: env.HAS_CHANGES == 'true'
+        id: apply
+        run: |
+          terraform apply -auto-approve -input=false tfplan
+          echo "Apply completed successfully"
+
+
+      - name: Archive Terraform Plans
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-plans
+          path: tfplan.txt
+          retention-days: 14
