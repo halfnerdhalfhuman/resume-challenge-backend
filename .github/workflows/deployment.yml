@@ -29,11 +29,7 @@ jobs:
       TF_VAR_lambda_function_name: ${{ secrets.LAMBDA_FUNCTION_NAME }}
       TF_VAR_custom_domain: ${{ secrets.CUSTOM_DOMAIN }}
 
-    name: Configure AWS Credentials
-    uses: aws-actions/configure-aws-credentials@v4
-    with:
-      role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-      aws-region: ${{ secrets.AWS_REGION }}
+
 
 
 
@@ -50,6 +46,12 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
         
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
