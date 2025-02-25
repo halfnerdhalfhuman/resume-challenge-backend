@@ -11,7 +11,8 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write  # Needed for commenting on PRs
+  pull-requests: write  # for commenting on PRs
+  id-token: write # for OIDC auth
 
 env:
   TF_LOG: INFO
