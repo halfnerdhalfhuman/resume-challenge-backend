@@ -22,9 +22,9 @@ jobs:
     runs-on: ubuntu-latest
     environment: prod 
 
-  defaults:
-    run:
-      working-directory: ./terraform
+    defaults:
+      run:
+        working-directory: ./terraform
     
     # to prevent concurrent runs
     concurrency:
