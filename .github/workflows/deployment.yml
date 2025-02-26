@@ -123,13 +123,4 @@ jobs:
           echo "Apply completed successfully"
 
       - name: Trigger E2E Tests
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            await github.rest.actions.createWorkflowDispatch({
-              owner: 'tlew19',
-              repo: 'resume-challenge-frontend',
-              workflow_id: 'front-end-E2E.yml',
-              ref: 'main'
-            })
+        uses: halfnerdhalfhuman/resume-challenge-frontend/.github/workflows/front-end-E2E.yml
