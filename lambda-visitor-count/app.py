@@ -8,8 +8,6 @@ import json
 LAMBDA_DYNAMODB_RESOURCE = { "resource" : resource('dynamodb', region_name='us-east-1'), 
                               "table_name" : environ.get("DYNAMODB_TABLE_NAME","NONE") }
 
-
-
 class LambdaDynamoDBClass:
     """
     AWS DynamoDB Resource Class
