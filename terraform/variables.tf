@@ -23,7 +23,7 @@ variable "state_bucket" {
 }
 
 variable "state_key" {
-  type        = string
+  type = string
 }
 
 variable "ddb_state_table" {
