@@ -3,7 +3,7 @@ from os import environ
 from boto3 import resource
 import json
 
-# DynamoDBClass is used for function and testing
+#  DynamoDBClass is used for function and testing
 
 LAMBDA_DYNAMODB_RESOURCE = { "resource" : resource('dynamodb', region_name='us-east-1'), 
                               "table_name" : environ.get("DYNAMODB_TABLE_NAME","NONE") }

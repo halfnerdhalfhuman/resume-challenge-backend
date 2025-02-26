@@ -9,9 +9,15 @@ terraform {
       source  = "hashicorp/archive"
       version = "~> 2.7.0"
     }
+
   }
-
-
+  backend "s3" {
+  bucket         = "terraform-state-bucket-rc-tl-2025"
+  key            = "terraform.tfstate"
+  region         = "us-east-1"
+  dynamodb_table = "terraform-state-lock"
+  encrypt        = true
+  } 
 }
 
 provider "aws" {

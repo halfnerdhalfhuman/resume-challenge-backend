@@ -29,6 +29,9 @@ jobs:
       TF_VAR_ddb_table: ${{ secrets.DDB_TABLE }}
       TF_VAR_lambda_function_name: ${{ secrets.LAMBDA_FUNCTION_NAME }}
       TF_VAR_custom_domain: ${{ secrets.CUSTOM_DOMAIN }}
+      TF_VAR_state_bucket: ${{ vars.STATE_BUCKET }}
+      TF_VAR_state_key: ${{ vars.STATE_KEY }}
+      TF_VAR_ddb_state_table: ${{ vars.DDB_STATE_TABLE }}
 
 
 
@@ -82,27 +85,7 @@ jobs:
           cat tfplan.txt
         continue-on-error: false
       
-      - name: Add Plan to PR Comment
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const fs = require('fs');
-            const planOutput = fs.readFileSync('tfplan.txt', 'utf8');
-            const output = `#### Terraform Plan 📝
-            \`\`\`diff
-            ${planOutput}
-            \`\`\`
-            *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
-            
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: output
-            })
-      
+       
       - name: Check if Changes Exist
         id: changes
         run: |
@@ -125,28 +108,23 @@ jobs:
           fi
       
       - name: Manual Approval
-        uses: trstringer/manual-approval@v1
+      - uses: trstringer/manual-approval@v1
         if: env.HAS_CHANGES == 'true'
         with:
-          secret: ${{ secrets.GITHUB_TOKEN }}
-          approvers: ${{ github.actor }}
+          secret: ${{ github.TOKEN }}
+          approvers: tlew19
           minimum-approvals: 1
-          issue-title: "Approval Required: Terraform Apply for ${{ github.ref_name }}"
-          issue-body: "Please review the Terraform plan and approve or deny the apply operation."
+          issue-title: "Deploying to prod"
+          issue-body: "Please approve or deny the deployment"
           exclude-workflow-initiator-as-approver: false
-          timeout-minutes: 60
-      
+          additional-approved-words: ''
+          additional-denied-words: ''
+          timeout-minutes: 15
+
+
       - name: Terraform Apply
         if: env.HAS_CHANGES == 'true'
         id: apply
         run: |
           terraform apply -auto-approve -input=false tfplan
           echo "Apply completed successfully"
-
-
-      - name: Archive Terraform Plans
-        uses: actions/upload-artifact@v4
-        with:
-          name: terraform-plans
-          path: tfplan.txt
-          retention-days: 14

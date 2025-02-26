@@ -1,3 +1,42 @@
+# S3 bucket for Terraform state
+resource "aws_s3_bucket" "terraform_state" {
+  bucket = var.state_bucket
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+resource "aws_s3_bucket_versioning" "terraform_state" {
+  bucket = aws_s3_bucket.terraform_state.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+
+# Enable server-side encryption
+resource "aws_s3_bucket_server_side_encryption_configuration" "terraform_state" {
+  bucket = aws_s3_bucket.terraform_state.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+# DynamoDB table for state locking
+resource "aws_dynamodb_table" "terraform_locks" {
+  name         = var.ddb_state_table
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "LockID"
+
+  attribute {
+    name = "LockID"
+    type = "S"
+  }
+}
 
 
 ###############################################################################
@@ -444,15 +483,41 @@ resource "aws_iam_policy" "github_actions" {
 
   policy = jsonencode({
     Statement = [{
-      Action   = ["s3:PutObject"]
+      Sid      = "AllowS3WebsitePut"
       Effect   = "Allow"
+      Action   = ["s3:PutObject"]
       Resource = ["arn:aws:s3:::${var.s3_bucket}", "arn:aws:s3:::${var.s3_bucket}/*"]
-      Sid      = "AllowS3Action"
-      }, {
-      Action   = ["sts:AssumeRole"]
-      Effect   = "Deny"
-      Resource = ["*"]
+      }, 
+      {
+      Sid      = "AllowS3StateList"
+      Effect   = "Allow"
+      Action   = ["s3:ListBucket"]
+      Resource = ["arn:aws:s3:::${var.state_bucket}"]
+      },
+      {
+      Sid      = "AllowS3StateManage"
+      Effect   = "Allow"
+      Action   = ["s3:GetObject", "s3:PutObject"]
+      Resource = [
+        "arn:aws:s3:::${var.state_bucket}/${var.state_key}",
+        "arn:aws:s3:::${var.state_bucket}/${var.state_key}.tflock"
+      ]
+      },      
+      {
+      Sid      = "AllowStateLockDDB"
+      Effect   = "Allow"
+      Action   = [
+                "dynamodb:DescribeTable",
+                "dynamodb:GetItem",
+                "dynamodb:PutItem",
+                "dynamodb:DeleteItem"]
+      Resource = ["arn:aws:dynamodb:*:*:table/${var.ddb_state_table}"]
+      },     
+      {
       Sid      = "OidcPreventRoleChaining"
+      Effect   = "Deny"
+      Action   = ["sts:AssumeRole"]
+      Resource = ["*"]
     }]
     Version = "2012-10-17"
   })
