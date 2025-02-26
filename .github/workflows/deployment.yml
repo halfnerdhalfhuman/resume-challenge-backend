@@ -12,6 +12,7 @@ permissions:
   contents: read
   id-token: write
   issues: write
+  actions: write
 
 jobs:
   terraform:
