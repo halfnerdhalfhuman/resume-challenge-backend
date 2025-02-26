@@ -122,4 +122,5 @@ jobs:
           terraform apply -auto-approve -input=false tfplan
           echo "Apply completed successfully"
   E2E-test:
+    needs: terraform
     uses: halfnerdhalfhuman/resume-challenge-frontend/.github/workflows/front-end-E2E.yml@main

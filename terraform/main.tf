@@ -463,7 +463,7 @@ resource "aws_iam_role" "github_actions" {
           "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
         }
         StringLike = {
-          "token.actions.githubusercontent.com:sub" = "repo:tlew19/*"
+          "token.actions.githubusercontent.com:sub" = "repo:halfnerdhalfhuman/*"
         }
       }
       Effect = "Allow"
