@@ -33,10 +33,6 @@ jobs:
       TF_VAR_state_key: ${{ vars.STATE_KEY }}
       TF_VAR_ddb_state_table: ${{ vars.DDB_STATE_TABLE }}
 
-
-
-
-
     defaults:
       run:
         working-directory: ./terraform
@@ -108,7 +104,7 @@ jobs:
           fi
       
       - name: Manual Approval
-      - uses: trstringer/manual-approval@v1
+        uses: trstringer/manual-approval@v1
         if: env.HAS_CHANGES == 'true'
         with:
           secret: ${{ github.TOKEN }}
