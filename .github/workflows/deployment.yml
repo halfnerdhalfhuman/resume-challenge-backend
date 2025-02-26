@@ -14,9 +14,6 @@ permissions:
   pull-requests: write  # for commenting on PRs
   id-token: write # for OIDC auth
 
-env:
-  TF_LOG: INFO
-
 jobs:
   terraform:
     name: Terraform Operations
