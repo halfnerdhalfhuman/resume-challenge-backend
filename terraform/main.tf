@@ -453,7 +453,7 @@ resource "aws_iam_openid_connect_provider" "github_actions" {
 
 resource "aws_iam_role" "github_actions" {
   name                 = "GitHubAction-AssumeRoleWithAction"
-  max_session_duration = 900
+  max_session_duration = 3600
 
   assume_role_policy = jsonencode({
     Statement = [{
