@@ -123,4 +123,4 @@ jobs:
           echo "Apply completed successfully"
 
       - name: Trigger E2E Tests
-        uses: halfnerdhalfhuman/resume-challenge-frontend/.github/workflows/front-end-E2E.yml
+        uses: halfnerdhalfhuman/resume-challenge-frontend/.github/workflows/front-end-E2E.yml@main
